@@ -23,6 +23,10 @@ class GoogleMapsScraper:
         self.headless = headless
         self.business_data = []
         self.scan_count = 0  # Tarama sayacı
+        self.current_query = ""  # Mevcut arama terimi
+        self.current_location = ""  # Mevcut konum
+        self.progress_callback = None  # İlerleme callback fonksiyonu
+        self.max_results = 0  # Maksimum sonuç sayısı
         
         # Logging ayarları
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -54,7 +58,7 @@ class GoogleMapsScraper:
             self.logger.error(f"Driver ayarlanırken hata: {e}")
             return False
     
-    def search_businesses(self, query, location="", max_results=50, detailed_info=True):
+    def search_businesses(self, query, location="", max_results=50, detailed_info=True, progress_callback=None):
         """
         Google Maps'te işletme ara - DETAYLI MOD
         
@@ -63,7 +67,14 @@ class GoogleMapsScraper:
             location (str): Konum (örn: "İstanbul", "Ankara")
             max_results (int): Maksimum sonuç sayısı
             detailed_info (bool): Detaylı bilgileri topla (her zaman True)
+            progress_callback (function): İlerleme güncelleme callback fonksiyonu
         """
+        # Arama bilgilerini sakla
+        self.current_query = query
+        self.current_location = location
+        self.progress_callback = progress_callback
+        self.max_results = max_results
+        
         # Driver yeniden başlatma limiti kaldırıldı - sınırsız tarama
         # Sadece driver yoksa yeni bir tane oluştur
         
@@ -174,6 +185,11 @@ class GoogleMapsScraper:
                             self.business_data.append(business_info)
                             collected += 1
                             self.logger.info(f"Toplanan işletme sayısı: {collected} - {business_info['Ad']}")
+                            
+                            # İlerleme çubuğunu güncelle
+                            if self.progress_callback:
+                                progress_percent = (collected / self.max_results) * 100
+                                self.progress_callback(progress_percent, collected, business_info['Ad'])
                             
                             # 10 tane bulunca özel bekleme ve scroll
                             if collected == 10:
@@ -882,12 +898,49 @@ class GoogleMapsScraper:
             self.logger.error(f"Detaylı bilgi alınırken hata: {e}")
             return {}
     
-    def save_to_excel(self, filename="isletme_verileri.xlsx"):
+    def generate_filename(self):
+        """Otomatik dosya ismi oluştur: İşletme_Şehir_Raporu_Tarih"""
+        try:
+            from datetime import datetime
+            import re
+            
+            # Tarih formatı: YYYY-MM-DD
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            
+            # Query'yi temizle (özel karakterleri kaldır)
+            clean_query = re.sub(r'[^\w\s]', '', self.current_query)
+            clean_query = re.sub(r'\s+', '_', clean_query.strip())
+            
+            # Location'ı temizle
+            clean_location = re.sub(r'[^\w\s]', '', self.current_location)
+            clean_location = re.sub(r'\s+', '_', clean_location.strip())
+            
+            # Eğer location boşsa "Genel" kullan
+            if not clean_location:
+                clean_location = "Genel"
+            
+            # Dosya ismini oluştur
+            filename = f"{clean_query}_{clean_location}_Raporu_{current_date}.xlsx"
+            
+            return filename
+            
+        except Exception as e:
+            self.logger.error(f"Dosya ismi oluşturulurken hata: {e}")
+            # Hata durumunda varsayılan isim
+            from datetime import datetime
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            return f"İşletme_Raporu_{current_date}.xlsx"
+    
+    def save_to_excel(self, filename=None):
         """Toplanan verileri Excel dosyasına kaydet - MODERN VE RENKLİ"""
         try:
             if not self.business_data:
                 self.logger.warning("Kaydedilecek veri bulunamadı")
                 return False
+            
+            # Eğer filename verilmemişse otomatik oluştur
+            if filename is None:
+                filename = self.generate_filename()
             
             df = pd.DataFrame(self.business_data)
             
@@ -908,6 +961,16 @@ class GoogleMapsScraper:
                 from openpyxl.utils import get_column_letter
                 from openpyxl.formatting.rule import ColorScaleRule, CellIsRule
                 from openpyxl.styles.differential import DifferentialStyle
+                
+                # Sayfa başlığını EN BAŞTA ekle (stil uygulamalarından önce)
+                worksheet.insert_rows(1)
+                title_cell = worksheet.cell(row=1, column=1)
+                title_cell.value = f"🗺️ GOOGLE MAPS İŞLETME VERİLERİ - {len(df_filtered)} İşletme"
+                title_cell.font = Font(name='Calibri', size=16, bold=True, color='6F42C1')
+                title_cell.alignment = Alignment(horizontal='center', vertical='center')
+                
+                # Başlık satırını birleştir
+                worksheet.merge_cells(f'A1:{get_column_letter(len(df_filtered.columns))}1')
                 
                 # Renk paleti
                 colors = {
@@ -948,17 +1011,17 @@ class GoogleMapsScraper:
                 center_alignment = Alignment(horizontal='center', vertical='center')
                 left_alignment = Alignment(horizontal='left', vertical='center')
                 
-                # Başlık satırını stilleyin (1. satır) - sadece gerekli sütunlar
+                # Başlık satırını stilleyin (2. satır) - sadece gerekli sütunlar
                 for col_num in range(1, len(df_filtered.columns) + 1):
-                    cell = worksheet.cell(row=1, column=col_num)
+                    cell = worksheet.cell(row=2, column=col_num)
                     cell.font = header_font
                     cell.fill = header_fill
                     cell.border = thin_border
                     cell.alignment = center_alignment
                 
                 # Veri satırlarını stilleyin - tüm satırlar dahil
-                total_rows = len(df_filtered) + 1  # +1 başlık satırı için
-                for row_num in range(2, total_rows + 1):
+                total_rows = len(df_filtered) + 2  # +1 başlık satırı +1 title satırı için
+                for row_num in range(3, total_rows + 1):
                     for col_num in range(1, len(df_filtered.columns) + 1):
                         cell = worksheet.cell(row=row_num, column=col_num)
                         cell.font = data_font
@@ -1004,7 +1067,7 @@ class GoogleMapsScraper:
                     puan_col = df_filtered.columns.get_loc('Puan/Yorum') + 1
                     
                     # Puan verilerini temizle ve sayısal değere çevir - tüm satırlar için
-                    for row_num in range(2, total_rows + 1):
+                    for row_num in range(3, total_rows + 1):
                         cell = worksheet.cell(row=row_num, column=puan_col)
                         if cell.value:
                             # Puan verisini temizle (örn: "4,8 yıldızlı 4.142 Yorum" -> 4.8)
@@ -1052,15 +1115,15 @@ class GoogleMapsScraper:
                     
                     # Koşullu formatlamayı uygula - tüm satırlar için
                     worksheet.conditional_formatting.add(
-                        f'{get_column_letter(puan_col)}2:{get_column_letter(puan_col)}{total_rows}',
+                        f'{get_column_letter(puan_col)}3:{get_column_letter(puan_col)}{total_rows}',
                         high_rating_rule
                     )
                     worksheet.conditional_formatting.add(
-                        f'{get_column_letter(puan_col)}2:{get_column_letter(puan_col)}{total_rows}',
+                        f'{get_column_letter(puan_col)}3:{get_column_letter(puan_col)}{total_rows}',
                         medium_rating_rule
                     )
                     worksheet.conditional_formatting.add(
-                        f'{get_column_letter(puan_col)}2:{get_column_letter(puan_col)}{total_rows}',
+                        f'{get_column_letter(puan_col)}3:{get_column_letter(puan_col)}{total_rows}',
                         low_rating_rule
                     )
                 
@@ -1068,17 +1131,7 @@ class GoogleMapsScraper:
                 for row_num in range(1, total_rows + 1):
                     worksheet.row_dimensions[row_num].height = 25
                 
-                # Sayfa başlığı ekle
-                worksheet.insert_rows(1)
-                title_cell = worksheet.cell(row=1, column=1)
-                title_cell.value = f"🗺️ GOOGLE MAPS İŞLETME VERİLERİ - {len(df_filtered)} İşletme"
-                title_cell.font = Font(name='Calibri', size=16, bold=True, color=colors['accent'])
-                title_cell.alignment = Alignment(horizontal='center', vertical='center')
-                
-                # Başlık satırını birleştir
-                worksheet.merge_cells(f'A1:{get_column_letter(len(df_filtered.columns))}1')
-                
-                # Başlık satırı için stil
+                # Başlık satırı (1. satır) için stil
                 for col_num in range(1, len(df_filtered.columns) + 1):
                     cell = worksheet.cell(row=1, column=col_num)
                     cell.fill = PatternFill(

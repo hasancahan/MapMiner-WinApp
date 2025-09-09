@@ -7,15 +7,14 @@ Bu script Google Maps'ten işletme bilgilerini toplar ve Excel dosyasına aktar�
 
 import os
 import sys
-import tkinter as tk
 from tkinter import messagebox
 
 def main():
-    """Ana fonksiyon - Modern GUI'yi başlat"""
+    """Ana fonksiyon - Loading ekranını başlat"""
     try:
-        # Modern GUI'yi import et ve başlat
-        from modern_gui import main as gui_main
-        gui_main()
+        # Loading ekranını import et ve başlat
+        from loading_screen import main as loading_main
+        loading_main()
         
     except ImportError as e:
         # GUI import edilemezse konsol moduna geç
@@ -97,6 +96,11 @@ def run_console_mode():
                 
                 # Excel'e kaydet
                 print("💾 Veriler Excel dosyasına kaydediliyor...")
+                # Eğer filename verilmemişse otomatik oluştur
+                if not filename or filename == "isletme_verileri.xlsx":
+                    filename = scraper.generate_filename()
+                    print(f"📝 Otomatik dosya ismi: {filename}")
+                
                 if scraper.save_to_excel(filename):
                     print(f"✅ Veriler başarıyla '{filename}' dosyasına kaydedildi!")
                     print()

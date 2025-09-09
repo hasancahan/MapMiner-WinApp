@@ -10,9 +10,7 @@ import threading
 import os
 from google_maps_scraper import GoogleMapsScraper
 import webbrowser
-import pywhatkit as pwk
 import time
-from datetime import datetime, timedelta
 import pandas as pd
 import pyautogui
 
@@ -44,11 +42,28 @@ class ModernScraperGUI:
         self.setup_ui()
     
     def center_window(self, window):
-        """Pencereyi ekranın ortasında konumlandır"""
+        """Pencereyi ekranın ortasında konumlandır - EXE uyumlu"""
         window.update_idletasks()
-        x = (window.winfo_screenwidth() // 2) - (window.winfo_width() // 2)
-        y = (window.winfo_screenheight() // 2) - (window.winfo_height() // 2)
-        window.geometry(f"+{x}+{y}")
+        
+        # Sabit pencere boyutları (EXE'de güvenilir)
+        window_width = 900
+        window_height = 800
+        
+        # Ekran boyutlarını al
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        
+        # Ortalama koordinatlarını hesapla
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        
+        # Negatif koordinatları önle
+        x = max(0, x)
+        y = max(0, y)
+        
+        # Pencereyi ortala - sabit boyutlarla
+        window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        window.update()
         
     def setup_ui(self):
         """Modern UI'yi oluştur"""
@@ -196,6 +211,17 @@ class ModernScraperGUI:
         )
         self.progress_bar.pack(fill='x', pady=(0, 10))
         
+        # İlerleme çubuğu stilini yeşil yap
+        style = ttk.Style()
+        style.theme_use('clam')  # Tema değiştir
+        style.configure("Green.Horizontal.TProgressbar", 
+                       background='#28A745',  # Yeşil renk
+                       troughcolor='#E9ECEF',  # Açık gri arka plan
+                       borderwidth=0,
+                       lightcolor='#28A745',
+                       darkcolor='#28A745')
+        self.progress_bar.configure(style="Green.Horizontal.TProgressbar")
+        
         # Durum etiketi
         self.status_label = tk.Label(
             progress_frame,
@@ -252,16 +278,16 @@ class ModernScraperGUI:
             button_frame,
             text="BAŞLAT",
             font=('Segoe UI', 11, 'bold'),
-            bg='#2E8B57',    # Deniz yeşili
-            fg='white',
+            bg='#E8F5E8',    # Soft yeşil (başlatma)
+            fg='#2D5A2D',    # Koyu yeşil yazı
             relief='flat',
-            bd=0,
-            padx=20,
-            pady=10,
+            bd=1,            # İnce border
+            padx=25,         # Daha geniş padding (radius efekti)
+            pady=12,         # Daha yüksek padding
             command=self.start_search,
             cursor='hand2',
-            activebackground='#228B22',
-            activeforeground='white'
+            activebackground='#D4F4D4',  # Daha koyu soft yeşil hover
+            activeforeground='#1A3D1A'
         )
         self.start_button.pack(side='left', padx=(0, 8))
         
@@ -270,17 +296,17 @@ class ModernScraperGUI:
             button_frame,
             text="DURDUR",
             font=('Segoe UI', 11, 'bold'),
-            bg='#DC143C',    # Koyu kırmızı
-            fg='white',
+            bg='#FFE8E8',    # Soft kırmızı (durdurma)
+            fg='#8B2A2A',    # Koyu kırmızı yazı
             relief='flat',
-            bd=0,
-            padx=20,
-            pady=10,
+            bd=1,            # İnce border
+            padx=25,         # Daha geniş padding (radius efekti)
+            pady=12,         # Daha yüksek padding
             command=self.stop_search,
             state='disabled',
             cursor='hand2',
-            activebackground='#B22222',
-            activeforeground='white'
+            activebackground='#FFD4D4',  # Daha koyu soft kırmızı hover
+            activeforeground='#6B1A1A'
         )
         self.stop_button.pack(side='left', padx=(0, 8))
         
@@ -289,17 +315,17 @@ class ModernScraperGUI:
             button_frame,
             text="KAYDET",
             font=('Segoe UI', 11, 'bold'),
-            bg='#4169E1',    # Kraliyet mavisi
-            fg='white',
+            bg='#E8F4FF',    # Soft mavi (kaydetme)
+            fg='#2A5A8B',    # Koyu mavi yazı
             relief='flat',
-            bd=0,
-            padx=20,
-            pady=10,
+            bd=1,            # İnce border
+            padx=25,         # Daha geniş padding (radius efekti)
+            pady=12,         # Daha yüksek padding
             command=self.save_to_excel,
             state='disabled',
             cursor='hand2',
-            activebackground='#1E90FF',
-            activeforeground='white'
+            activebackground='#D4E8FF',  # Daha koyu soft mavi hover
+            activeforeground='#1A3D6B'
         )
         self.save_button.pack(side='left', padx=(0, 8))
         
@@ -308,16 +334,16 @@ class ModernScraperGUI:
             button_frame,
             text="TOPLU MESAJ",
             font=('Segoe UI', 11, 'bold'),
-            bg='#8A2BE2',    # Mavi menekşe
-            fg='white',
+            bg='#FFF4E8',    # Soft turuncu (mesaj gönderme)
+            fg='#8B5A2A',    # Koyu turuncu yazı
             relief='flat',
-            bd=0,
-            padx=20,
-            pady=10,
+            bd=1,            # İnce border
+            padx=25,         # Daha geniş padding (radius efekti)
+            pady=12,         # Daha yüksek padding
             command=self.open_bulk_message_window,
             cursor='hand2',
-            activebackground='#9370DB',
-            activeforeground='white'
+            activebackground='#FFE8D4',  # Daha koyu soft turuncu hover
+            activeforeground='#6B3D1A'
         )
         self.bulk_message_button.pack(side='right')
         
@@ -327,18 +353,18 @@ class ModernScraperGUI:
     def add_button_effects(self):
         """Butonlara modern efektler ekle"""
         try:
-            # Butonlara hover efekti ekle
-            self.start_button.bind("<Enter>", lambda e: self.start_button.config(bg='#228B22'))
-            self.start_button.bind("<Leave>", lambda e: self.start_button.config(bg='#2E8B57'))
+            # Butonlara hover efekti ekle - soft renkler
+            self.start_button.bind("<Enter>", lambda e: self.start_button.config(bg='#D4F4D4'))
+            self.start_button.bind("<Leave>", lambda e: self.start_button.config(bg='#E8F5E8'))
             
-            self.stop_button.bind("<Enter>", lambda e: self.stop_button.config(bg='#B22222'))
-            self.stop_button.bind("<Leave>", lambda e: self.stop_button.config(bg='#DC143C'))
+            self.stop_button.bind("<Enter>", lambda e: self.stop_button.config(bg='#FFD4D4'))
+            self.stop_button.bind("<Leave>", lambda e: self.stop_button.config(bg='#FFE8E8'))
             
-            self.save_button.bind("<Enter>", lambda e: self.save_button.config(bg='#1E90FF'))
-            self.save_button.bind("<Leave>", lambda e: self.save_button.config(bg='#4169E1'))
+            self.save_button.bind("<Enter>", lambda e: self.save_button.config(bg='#D4E8FF'))
+            self.save_button.bind("<Leave>", lambda e: self.save_button.config(bg='#E8F4FF'))
             
-            self.bulk_message_button.bind("<Enter>", lambda e: self.bulk_message_button.config(bg='#9370DB'))
-            self.bulk_message_button.bind("<Leave>", lambda e: self.bulk_message_button.config(bg='#8A2BE2'))
+            self.bulk_message_button.bind("<Enter>", lambda e: self.bulk_message_button.config(bg='#FFE8D4'))
+            self.bulk_message_button.bind("<Leave>", lambda e: self.bulk_message_button.config(bg='#FFF4E8'))
             
         except Exception as e:
             # Efekt ekleme başarısız olursa devam et
@@ -399,15 +425,20 @@ class ModernScraperGUI:
             self.log_message(f"Arama başlatılıyor: '{query}' in '{location}'", 'info')
             self.update_status("Arama başlatılıyor...")
             
+            # İlerleme çubuğunu sıfırla
+            self.progress_var.set(0)
+            self.update_count(0)
+            
             # Scraper'ı oluştur - her zaman görünür mod
             self.scraper = GoogleMapsScraper(headless=False)
             
-            # Arama yap
+            # Arama yap - progress callback ile
             success = self.scraper.search_businesses(
                 query=query,
                 location=location,
                 max_results=max_results,
-                detailed_info=True
+                detailed_info=True,
+                progress_callback=self.update_progress
             )
             
             if success and self.scraper.business_data:
@@ -460,11 +491,16 @@ class ModernScraperGUI:
         if not self.scraper or not self.scraper.business_data:
             messagebox.showwarning("Uyarı", "Kaydedilecek veri bulunamadı!")
             return
-            
+        
+        # Otomatik dosya ismi oluştur
+        auto_filename = self.scraper.generate_filename()
+        
+        # Kullanıcıya dosya konumu seçtir
         filename = filedialog.asksaveasfilename(
             defaultextension=".xlsx",
             filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
-            title="Excel dosyasını kaydet"
+            title="Excel dosyasını kaydet",
+            initialfile=auto_filename
         )
         
         if filename:
@@ -510,16 +546,59 @@ class ModernScraperGUI:
         self.count_label.config(text=f"Bulunan işletme: {count}")
         self.root.update_idletasks()
         
+    def update_progress(self, progress_percent, count, business_name):
+        """İlerleme çubuğunu güncelle"""
+        try:
+            # Thread-safe güncelleme
+            self.root.after(0, self._update_progress_ui, progress_percent, count, business_name)
+        except Exception as e:
+            pass  # İlerleme güncelleme hatası sessizce geç
+    
+    def _update_progress_ui(self, progress_percent, count, business_name):
+        """UI'yi güncelle (main thread'de çalışır)"""
+        try:
+            # İlerleme çubuğunu güncelle
+            self.progress_var.set(progress_percent)
+            
+            # İşletme sayısını güncelle
+            self.update_count(count)
+            
+            # Durum mesajını güncelle
+            self.update_status(f"İşletme toplanıyor: {business_name}")
+            
+            # Log mesajı ekle
+            self.log_message(f"📊 {count}. işletme: {business_name}", 'info')
+            
+        except Exception as e:
+            pass  # UI güncelleme hatası sessizce geç
+        
 
 class BulkMessageWindow:
     """Toplu mesaj gönderme penceresi"""
     
     def center_window(self, window):
-        """Pencereyi ekranın ortasında konumlandır"""
+        """Pencereyi ekranın ortasında konumlandır - EXE uyumlu"""
         window.update_idletasks()
-        x = (window.winfo_screenwidth() // 2) - (window.winfo_width() // 2)
-        y = (window.winfo_screenheight() // 2) - (window.winfo_height() // 2)
-        window.geometry(f"+{x}+{y}")
+        
+        # Sabit pencere boyutları (EXE'de güvenilir)
+        window_width = 900
+        window_height = 800
+        
+        # Ekran boyutlarını al
+        screen_width = window.winfo_screenwidth()
+        screen_height = window.winfo_screenheight()
+        
+        # Ortalama koordinatlarını hesapla
+        x = (screen_width - window_width) // 2
+        y = (screen_height - window_height) // 2
+        
+        # Negatif koordinatları önle
+        x = max(0, x)
+        y = max(0, y)
+        
+        # Pencereyi ortala - sabit boyutlarla
+        window.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        window.update()
     
     def __init__(self, parent, excel_file):
         self.parent = parent
@@ -629,15 +708,17 @@ Başarılarınızın devamını dileriz!"""
             button_frame,
             text="📤 Manuel Mesaj Linkleri",
             font=('Segoe UI', 12, 'bold'),
-            bg='#25D366',
-            fg='white',
+            bg='#E8F8F5',    # Soft yeşil (WhatsApp teması)
+            fg='#1B5E20',    # Koyu yeşil yazı
             relief='flat',
-            bd=2,
-            padx=20,
-            pady=10,
+            bd=1,
+            padx=25,         # Eşit boyut için
+            pady=12,         # Eşit boyut için
             command=self.send_bulk_messages,
             cursor='hand2',
-            state='disabled'
+            state='disabled',
+            activebackground='#D4F4E6',  # Hover efekti
+            activeforeground='#0D3D0D'
         )
         self.send_button.pack(side='left', padx=10, fill='x', expand=True)
         
@@ -646,15 +727,17 @@ Başarılarınızın devamını dileriz!"""
             button_frame,
             text="🚀 Otomatik Gönder",
             font=('Segoe UI', 12, 'bold'),
-            bg='#FF6B35',
-            fg='white',
+            bg='#FFF3E0',    # Soft turuncu (otomatik işlem)
+            fg='#E65100',    # Koyu turuncu yazı
             relief='flat',
-            bd=2,
-            padx=20,
-            pady=10,
+            bd=1,
+            padx=25,         # Eşit boyut için
+            pady=12,         # Eşit boyut için
             command=self.auto_send_messages,
             cursor='hand2',
-            state='disabled'
+            state='disabled',
+            activebackground='#FFE0B2',  # Hover efekti
+            activeforeground='#BF360C'
         )
         self.auto_send_button.pack(side='left', padx=5, fill='x', expand=True)
         
@@ -662,29 +745,53 @@ Başarılarınızın devamını dileriz!"""
         close_button = tk.Button(
             button_frame,
             text="❌ Kapat",
-            font=('Segoe UI', 14, 'bold'),
-            bg='#DC3545',
-            fg='white',
+            font=('Segoe UI', 12, 'bold'),  # Eşit font boyutu
+            bg='#FFEBEE',    # Soft kırmızı (kapatma)
+            fg='#C62828',    # Koyu kırmızı yazı
             relief='flat',
-            bd=2,
-            padx=40,
-            pady=15,
+            bd=1,
+            padx=25,         # Eşit boyut için
+            pady=12,         # Eşit boyut için
             command=self.window.destroy,
-            cursor='hand2'
+            cursor='hand2',
+            activebackground='#FFCDD2',  # Hover efekti
+            activeforeground='#B71C1C'
         )
         close_button.pack(side='right', padx=20, fill='x', expand=True)
+        
+        # Butonlara hover efektleri ekle
+        self.add_bulk_message_hover_effects()
+        
+    def add_bulk_message_hover_effects(self):
+        """Toplu mesaj butonlarına hover efektleri ekle"""
+        try:
+            # Manuel gönder butonu hover efekti
+            self.send_button.bind("<Enter>", lambda e: self.send_button.config(bg='#D4F4E6'))
+            self.send_button.bind("<Leave>", lambda e: self.send_button.config(bg='#E8F8F5'))
+            
+            # Otomatik gönder butonu hover efekti
+            self.auto_send_button.bind("<Enter>", lambda e: self.auto_send_button.config(bg='#FFE0B2'))
+            self.auto_send_button.bind("<Leave>", lambda e: self.auto_send_button.config(bg='#FFF3E0'))
+            
+        except Exception as e:
+            # Efekt ekleme başarısız olursa devam et
+            pass
         
     def load_excel_data(self):
         """Excel verilerini yükle"""
         try:
             import pandas as pd
-            self.df = pd.read_excel(self.excel_file)
-            print(f"✅ {len(self.df)} işletme verisi yüklendi")
-            print(f"📊 Excel sütunları: {list(self.df.columns)}")
             
-            # İlk satırı göster
-            if len(self.df) > 0:
-                print(f"📋 İlk satır örneği: {dict(self.df.iloc[0])}")
+            # Excel dosyasını header=1 ile oku (ikinci satırı başlık olarak al)
+            self.df = pd.read_excel(self.excel_file, header=1)
+            
+            # Boş satırları temizle
+            self.df = self.df.dropna(how='all')  # Tüm sütunları boş olan satırları sil
+            
+            # İşletme adı olmayan satırları temizle
+            if 'Ad' in self.df.columns:
+                self.df = self.df.dropna(subset=['Ad'])  # Ad sütunu boş olan satırları sil
+                self.df = self.df[self.df['Ad'].astype(str).str.strip() != '']  # Boş string'leri sil
             
             # Butonları aktif hale getir
             self.send_button.config(state='normal')
@@ -709,8 +816,6 @@ Başarılarınızın devamını dileriz!"""
             for index, row in self.df.iterrows():
                 try:
                     # Excel sütun isimlerini kontrol et
-                    print(f"Excel sütunları: {list(self.df.columns)}")
-                    print(f"Satır verisi: {dict(row)}")
                     
                     # Sütun isimlerini farklı varyasyonlarla dene
                     # Önce Unnamed sütunlarını kontrol et
@@ -750,24 +855,27 @@ Başarılarınızın devamını dileriz!"""
                                  row.get('Puan') or row.get('Score') or 'Puan bilgisi yok')
                     
                     # Mesajı kişiselleştir
-                    personalized_message = message_content.format(
-                        isim=name,
-                        isletme_adi=name,
-                        adres=address,
-                        telefon=phone,
-                        puan=rating
-                    )
+                    try:
+                        personalized_message = message_content.format(
+                            isim=name,
+                            isletme_adi=name,
+                            adres=address,
+                            telefon=phone,
+                            puan=rating
+                        )
+                        
+                        if phone:
+                            messages.append({
+                                'phone': phone,
+                                'name': name,
+                                'message': personalized_message
+                            })
                     
-                    if phone:
-                        messages.append({
-                            'phone': phone,
-                            'name': name,
-                            'message': personalized_message
-                        })
-                    
+                    except Exception as e:
+                        continue  # Mesaj hazırlanamadı, devam et
+                        
                 except Exception as e:
-                    print(f"Mesaj hazırlanamadı: {e}")
-                    continue
+                    continue  # Satır işlenirken hata, devam et
             
             # WhatsApp linklerini oluştur ve göster
             self.show_whatsapp_links(messages)
@@ -783,11 +891,22 @@ Başarılarınızın devamını dileriz!"""
                 messagebox.showerror("Hata", "Mesaj içeriği boş olamaz!")
                 return
             
+            # İlk bilgilendirme mesajı
+            info_result = messagebox.showinfo(
+                "📱 WhatsApp Web Açılacak", 
+                f"🚀 Otomatik mesaj gönderimi başlatılacak!\n\n"
+                f"📊 Toplam {len(self.df)} işletmeye mesaj gönderilecek\n"
+                f"🌐 WhatsApp Web açılacak\n"
+                f"📱 QR kod okutmanız için 15 saniye süreniz var\n"
+                f"⏰ Sonra otomatik mesajlar gönderilecek\n\n"
+                f"Devam etmek için 'Tamam' butonuna basın"
+            )
+            
             # Onay al
             result = messagebox.askyesno(
                 "Onay", 
                 f"Toplam {len(self.df)} işletmeye gerçek mesaj gönderilecek!\n"
-                f"📱 Mesajlar pywhatkit ile gönderilecek\n"
+                f"📱 Mesajlar WhatsApp Web'de gönderilecek\n"
                 f"⚠️ Bu işlem geri alınamaz!\n\n"
                 f"Devam etmek istiyor musunuz?"
             )
@@ -822,15 +941,11 @@ Başarılarınızın devamını dileriz!"""
                 
                 # Mesaj alanını doldurduktan hemen sonra Enter tuşuna bas
                 pyautogui.press('enter')
-                print(f"📤 Enter tuşuna basıldı - mesaj gönderildi: {phone_no}")
-                
                 return True
             else:
-                print("❌ WhatsApp driver bulunamadı")
                 return False
             
         except Exception as e:
-            print(f"❌ Mesaj gönderilemedi: {e}")
             return False
     
     def _auto_send_worker(self):
@@ -858,32 +973,36 @@ Başarılarınızın devamını dileriz!"""
                 
                 # WhatsApp Web'i aç
                 self.whatsapp_driver.get("https://web.whatsapp.com")
-                print("✅ WhatsApp Web açıldı, mesajlar gönderilmeye başlanıyor...")
-                time.sleep(10)  # WhatsApp Web'in tam yüklenmesi için 10 saniye bekleme
+                time.sleep(15)  # WhatsApp Web'in tam yüklenmesi ve QR kod okutma için 15 saniye bekleme
             except Exception as e:
-                print(f"WhatsApp Web açılamadı: {e}")
                 return
             
             for index, row in self.df.iterrows():
                 try:
+                    # Boş satırları atla
+                    if row.isnull().all() or row.empty:
+                        continue
+                    
+                    # İşletme adı kontrolü - eğer ad yoksa atla
+                    business_name = row.get('Ad') or row.get('İsim') or row.get('Name') or row.get('İşletme Adı') or row.get('Business Name')
+                    
+                    if not business_name or str(business_name).strip() == '' or str(business_name).lower() == 'nan':
+                        continue
+                    
                     # Telefon numarasını al
                     phone = self._extract_phone(row)
                     if not phone:
-                        print(f"⚠️ Telefon numarası bulunamadı: {dict(row)}")
                         error_count += 1
                         continue
                     
                     # Telefon numarasını temizle (ülke kodu ekle)
                     clean_phone = self._clean_phone_number(phone)
                     if not clean_phone:
-                        print(f"⚠️ Geçersiz telefon numarası: {phone}")
                         error_count += 1
                         continue
                     
                     # Mesajı kişiselleştir
                     personalized_message = self._personalize_message(message_content, row)
-                    
-                    print(f"📱 Mesaj gönderiliyor: {clean_phone}")
                     
                     # Normal Chrome penceresinde mesaj gönder
                     if self._send_whatsapp_message_normal(clean_phone, personalized_message):
@@ -892,19 +1011,16 @@ Başarılarınızın devamını dileriz!"""
                         if hasattr(self, 'whatsapp_driver') and self.whatsapp_driver is not None:
                             self.whatsapp_driver.refresh()  # Selenium ile sayfa yenile
                         time.sleep(3)  # Sayfa yenilenmesi için bekleme süresi
-                        print(f"🔄 Sayfa yenilendi - sonraki mesaj için hazır")
                         
                         success_count += 1
-                        print(f"✅ Mesaj başarıyla gönderildi: {clean_phone}")
                         
                         # Hemen sonraki mesaja geç
                         if index < len(self.df) - 1:  # Son mesaj değilse
-                            print(f"⚡ Sonraki mesaja geçiliyor...")
+                            pass  # Sonraki mesaja geç
                     else:
                         error_count += 1
                         
                 except Exception as e:
-                    print(f"❌ Mesaj gönderilemedi ({phone}): {str(e)}")
                     error_count += 1
                     continue
             
@@ -918,7 +1034,7 @@ Başarılarınızın devamını dileriz!"""
             if hasattr(self, 'whatsapp_driver') and self.whatsapp_driver is not None:
                 try:
                     self.whatsapp_driver.quit()
-                    print("✅ WhatsApp driver kapatıldı")
+                    pass  # WhatsApp driver kapatıldı
                 except:
                     pass
             
@@ -942,10 +1058,8 @@ Başarılarınızın devamını dileriz!"""
             # Telefon numarası olabilecek değerleri kontrol et
             # Sadece rakam, +, -, (, ), boşluk içeren değerler
             if self._looks_like_phone(value_str):
-                print(f"📱 Telefon numarası bulundu: {col_name} = {value_str}")
                 return value_str
         
-        print(f"⚠️ Telefon numarası bulunamadı. Mevcut sütunlar: {list(row.index)}")
         return None
     
     def _looks_like_phone(self, text):
@@ -1032,7 +1146,6 @@ Başarılarınızın devamını dileriz!"""
             return '+90' + clean_phone
         
         # Geçersiz format
-        print(f"⚠️ Geçersiz telefon formatı: {phone} -> {clean_phone}")
         return None
     
     def _show_auto_send_results(self, success_count, error_count):
@@ -1162,14 +1275,16 @@ Başarılarınızın devamını dileriz!"""
                 button_frame,
                 text="🚀 Tümünü Aç",
                 font=('Segoe UI', 12, 'bold'),
-                bg='#25D366',
-                fg='white',
+                bg='#E8F8F5',    # Soft yeşil (WhatsApp teması)
+                fg='#1B5E20',    # Koyu yeşil yazı
                 relief='flat',
-                bd=0,
-                padx=30,
-                pady=12,
+                bd=1,
+                padx=25,         # Eşit boyut için
+                pady=12,         # Eşit boyut için
                 command=lambda: self.open_all_whatsapp_links(messages),
-                cursor='hand2'
+                cursor='hand2',
+                activebackground='#D4F4E6',  # Hover efekti
+                activeforeground='#0D3D0D'
             )
             open_all_button.pack(side='left', padx=10)
             
@@ -1178,16 +1293,25 @@ Başarılarınızın devamını dileriz!"""
                 button_frame,
                 text="❌ Kapat",
                 font=('Segoe UI', 12, 'bold'),
-                bg='#DC3545',
-                fg='white',
+                bg='#FFEBEE',    # Soft kırmızı (kapatma)
+                fg='#C62828',    # Koyu kırmızı yazı
                 relief='flat',
-                bd=0,
-                padx=30,
-                pady=12,
+                bd=1,
+                padx=25,         # Eşit boyut için
+                pady=12,         # Eşit boyut için
                 command=link_window.destroy,
-                cursor='hand2'
+                cursor='hand2',
+                activebackground='#FFCDD2',  # Hover efekti
+                activeforeground='#B71C1C'
             )
             close_button.pack(side='left', padx=10)
+            
+            # Butonlara hover efektleri ekle
+            open_all_button.bind("<Enter>", lambda e: open_all_button.config(bg='#D4F4E6'))
+            open_all_button.bind("<Leave>", lambda e: open_all_button.config(bg='#E8F8F5'))
+            
+            close_button.bind("<Enter>", lambda e: close_button.config(bg='#FFCDD2'))
+            close_button.bind("<Leave>", lambda e: close_button.config(bg='#FFEBEE'))
             
         except Exception as e:
             messagebox.showerror("Hata", f"Link penceresi gösterilemedi: {str(e)}")
